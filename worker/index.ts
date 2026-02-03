@@ -1,10 +1,8 @@
 export interface Env {
   DB: D1Database;
   RATE_LIMITER: KVNamespace;
+  ADMIN_PASSWORD: string;
 }
-
-// Simple admin password (change this via environment variable in production!)
-const ADMIN_PASSWORD = 'draft2026admin';
 
 // Helper to hash IP addresses for privacy
 function hashIP(ip: string): string {
@@ -281,7 +279,7 @@ export default {
         const authHeader = request.headers.get('Authorization');
         const password = authHeader?.replace('Bearer ', '');
 
-        if (password !== ADMIN_PASSWORD) {
+        if (!env.ADMIN_PASSWORD || password !== env.ADMIN_PASSWORD) {
           return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
         }
 
