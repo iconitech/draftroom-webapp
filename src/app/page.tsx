@@ -65,6 +65,7 @@ export default function HomePage() {
   const [sortColumn, setSortColumn] = useState<string>('rank')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
+  const [votedPlayers, setVotedPlayers] = useState<Set<number>>(new Set())
   const itemsPerPage = 50
 
   useEffect(() => {
@@ -105,6 +106,37 @@ export default function HomePage() {
       setSortDirection('asc')
     }
     setCurrentPage(1) // Reset to first page when sorting
+  }
+
+  const handlePlayerVote = async (playerId: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/player-vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: playerId })
+      })
+
+      const result = await res.json()
+      
+      if (res.ok) {
+        // Update local voted state
+        const newVoted = new Set(votedPlayers)
+        if (result.action === 'added') {
+          newVoted.add(playerId)
+        } else {
+          newVoted.delete(playerId)
+        }
+        setVotedPlayers(newVoted)
+
+        // Reload players to get updated counts
+        const updated = await fetch(`${API_URL}/api/players`).then(r => r.json())
+        setPlayers(Array.isArray(updated) ? updated : [])
+      } else {
+        alert(result.error || 'Vote failed')
+      }
+    } catch (err) {
+      alert('Failed to submit vote')
+    }
   }
 
   const filteredPlayers = (Array.isArray(players) ? players : []).filter(player => {
@@ -164,6 +196,10 @@ export default function HomePage() {
       case 'scout_grade':
         aVal = a.scout_grade || 0
         bVal = b.scout_grade || 0
+        break
+      case 'community_score':
+        aVal = a.community_score || 0
+        bVal = b.community_score || 0
         break
       default:
         return 0
@@ -310,6 +346,9 @@ export default function HomePage() {
               <th onClick={() => handleSort('scout_grade')} className="sortable">
                 Scout Grade {sortColumn === 'scout_grade' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
+              <th onClick={() => handleSort('community_score')} className="sortable">
+                Community {sortColumn === 'community_score' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -327,6 +366,25 @@ export default function HomePage() {
                 <td>{player.weight}</td>
                 <td><GradeBadge grade={player.pff_grade} label={player.pff_grade ? undefined : 'N/A'} /></td>
                 <td><GradeBadge grade={player.scout_grade} /></td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      onClick={() => handlePlayerVote(player.id)}
+                      className={`vote-btn ${votedPlayers.has(player.id) ? 'voted' : ''}`}
+                      title={votedPlayers.has(player.id) ? 'Remove vote' : 'Upvote'}
+                      style={{ 
+                        fontSize: '18px',
+                        padding: '4px 8px',
+                        background: votedPlayers.has(player.id) ? '#22c55e' : 'transparent'
+                      }}
+                    >
+                      👍
+                    </button>
+                    <span style={{ fontWeight: '600', color: '#22c55e' }}>
+                      {player.community_score || 0}
+                    </span>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -383,6 +441,28 @@ export default function HomePage() {
                 <div className="stat">
                   <span className="stat-label">Scout Grade</span>
                   <GradeBadge grade={player.scout_grade} />
+                </div>
+                <div className="stat">
+                  <span className="stat-label">Community</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePlayerVote(player.id)
+                      }}
+                      className={`vote-btn ${votedPlayers.has(player.id) ? 'voted' : ''}`}
+                      style={{ 
+                        fontSize: '16px',
+                        padding: '2px 6px',
+                        background: votedPlayers.has(player.id) ? '#22c55e' : 'transparent'
+                      }}
+                    >
+                      👍
+                    </button>
+                    <span style={{ fontWeight: '600', color: '#22c55e' }}>
+                      {player.community_score || 0}
+                    </span>
+                  </div>
                 </div>
               </div>
             </Link>

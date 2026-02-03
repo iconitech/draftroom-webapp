@@ -85,11 +85,17 @@ export default {
     }
 
     try {
-      // GET /api/players - Get all players
+      // GET /api/players - Get all players with community vote counts
       if (path === '/api/players' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          'SELECT * FROM players ORDER BY rank ASC'
-        ).all();
+        const { results } = await env.DB.prepare(`
+          SELECT 
+            p.*,
+            COALESCE(COUNT(pv.id), 0) as community_score
+          FROM players p
+          LEFT JOIN player_votes pv ON p.id = pv.player_id
+          GROUP BY p.id
+          ORDER BY p.rank ASC
+        `).all();
         return Response.json(results, { headers: corsHeaders });
       }
 
@@ -227,6 +233,47 @@ export default {
         }
 
         return Response.json({ success: true }, { headers: corsHeaders });
+      }
+
+      // POST /api/player-vote - Upvote a player on the Big Board
+      if (path === '/api/player-vote' && request.method === 'POST') {
+        const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'unknown';
+        
+        // Rate limiting: max 50 player votes per hour per IP
+        const rateLimitOk = await checkRateLimit(env, ip, 'player-vote', 50, 3600);
+        if (!rateLimitOk) {
+          return Response.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429, headers: corsHeaders });
+        }
+
+        const body: any = await request.json();
+        const { player_id } = body;
+        
+        if (!player_id) {
+          return Response.json({ error: 'Player ID required' }, { status: 400, headers: corsHeaders });
+        }
+
+        const ip_hash = hashIP(ip);
+
+        // Check if already voted for this player
+        const existingVote = await env.DB.prepare(
+          'SELECT * FROM player_votes WHERE player_id = ? AND ip_hash = ?'
+        ).bind(player_id, ip_hash).first();
+
+        if (existingVote) {
+          // Allow un-voting (toggle behavior)
+          await env.DB.prepare(
+            'DELETE FROM player_votes WHERE player_id = ? AND ip_hash = ?'
+          ).bind(player_id, ip_hash).run();
+          
+          return Response.json({ success: true, action: 'removed' }, { headers: corsHeaders });
+        }
+
+        // Insert new vote
+        await env.DB.prepare(
+          'INSERT INTO player_votes (player_id, ip_hash) VALUES (?, ?)'
+        ).bind(player_id, ip_hash).run();
+
+        return Response.json({ success: true, action: 'added' }, { headers: corsHeaders });
       }
 
       // PUT /api/admin/expert-report - Update expert report (admin only)
