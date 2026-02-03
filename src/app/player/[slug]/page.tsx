@@ -489,14 +489,15 @@ export default function PlayerPage({ params }: { params: Promise<{ slug: string 
                 autoComplete="off"
               />
               <textarea
-                placeholder="Your scouting report (minimum 50 characters)..."
+                placeholder="Your scouting report (50-2500 characters)..."
                 value={newReport.content}
                 onChange={(e) => setNewReport({ ...newReport, content: e.target.value })}
                 required
                 minLength={50}
+                maxLength={2500}
               />
               <p style={{ fontSize: '12px', color: '#666', marginTop: '-8px', marginBottom: '12px' }}>
-                Your email will not be displayed publicly. Required for spam prevention.
+                {newReport.content.length}/2500 characters • Your email will not be displayed publicly.
               </p>
               <button type="submit" className="submit-btn" disabled={submitting}>
                 {submitting ? 'Submitting...' : 'Submit Report'}

@@ -37,6 +37,37 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email) && email.length <= 254;
 }
 
+// Profanity filter - basic word list
+function containsProfanity(text: string): boolean {
+  const profanityList = [
+    'fuck', 'shit', 'bitch', 'ass', 'damn', 'hell', 'crap', 
+    'bastard', 'dick', 'cock', 'pussy', 'slut', 'whore', 'fag',
+    'nigger', 'nigga', 'retard', 'rape', 'nazi', 'hitler'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  
+  // Check for exact words or words with common character substitutions
+  for (const word of profanityList) {
+    const pattern = word.split('').map(char => {
+      // Handle common substitutions: a->@, e->3, i->1, o->0, s->$
+      if (char === 'a') return '[a@4]';
+      if (char === 'e') return '[e3]';
+      if (char === 'i') return '[i1!]';
+      if (char === 'o') return '[o0]';
+      if (char === 's') return '[s$5]';
+      return char;
+    }).join('[\\s\\-_]*'); // Allow spaces, dashes, underscores between letters
+    
+    const regex = new RegExp(`\\b${pattern}\\b`, 'i');
+    if (regex.test(lowerText)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -125,11 +156,20 @@ export default {
         // Sanitize inputs
         const sanitizedName = sanitizeText(display_name, 100);
         const sanitizedEmail = sanitizeText(email, 254);
-        const sanitizedContent = sanitizeText(content, 5000);
+        const sanitizedContent = sanitizeText(content, 2500);
 
         // Validation: content length
         if (sanitizedContent.length < 50) {
           return Response.json({ error: 'Report must be at least 50 characters' }, { status: 400, headers: corsHeaders });
+        }
+
+        if (content.length > 2500) {
+          return Response.json({ error: 'Report must be 2500 characters or less' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Validation: profanity check
+        if (containsProfanity(sanitizedContent) || containsProfanity(sanitizedName)) {
+          return Response.json({ error: 'Please keep your report professional and avoid inappropriate language' }, { status: 400, headers: corsHeaders });
         }
 
         const ip_hash = hashIP(ip);
