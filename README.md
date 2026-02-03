@@ -180,3 +180,4 @@ wrangler.toml                  # Cloudflare Workers config
 **Status:** ✅ Fully functional locally! Ready to deploy.
 
 **Admin Password:** `draft2026admin` (change in production!)
+# Trigger deploy
