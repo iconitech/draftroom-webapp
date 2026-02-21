@@ -231,13 +231,6 @@ export default function HomePage() {
   if (!mounted || loading) {
     return (
       <div className="container" style={{ paddingTop: '40px' }}>
-        <div className="hero">
-          <div className="logo">
-            <div className="logo-icon"></div>
-          </div>
-          <h1>DraftRoom</h1>
-          <p>Community-Driven NFL Draft Scouting</p>
-        </div>
         <p>Loading prospects...</p>
       </div>
     )
@@ -245,15 +238,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="hero">
-        <div className="logo">
-          <div className="logo-icon"></div>
-        </div>
-        <h1>DraftRoom</h1>
-        <p>Community-Driven NFL Draft Scouting</p>
-      </div>
-
-      <div className="container">
+      <div className="container" style={{ paddingTop: '40px' }}>
         <div className="filters-section">
           <div className="search-filter">
             <input
