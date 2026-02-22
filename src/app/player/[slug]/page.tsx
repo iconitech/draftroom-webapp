@@ -5,7 +5,8 @@ import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'
 
-function getGradeColor(grade: number) {
+// PFF Grade color coding (0-100 scale)
+function getPFFGradeColor(grade: number) {
   if (grade >= 90) return 'grade-elite'
   if (grade >= 80) return 'grade-high'
   if (grade >= 70) return 'grade-mid'
@@ -13,7 +14,7 @@ function getGradeColor(grade: number) {
   return 'grade-vlow'
 }
 
-function getGradeLabel(grade: number) {
+function getPFFGradeLabel(grade: number) {
   if (grade >= 90) return 'Elite'
   if (grade >= 80) return 'High'
   if (grade >= 70) return 'Mid'
@@ -21,7 +22,29 @@ function getGradeLabel(grade: number) {
   return 'V.Low'
 }
 
-function GradeBadge({ grade, label }: { grade: number | null | undefined, label?: string }) {
+// Scout Grade color coding (1-9 scale)
+function getScoutGradeColor(grade: number) {
+  if (grade >= 8.5) return 'grade-elite'      // 9.0 = Elite
+  if (grade >= 7.5) return 'grade-high'       // 8.0 = Outstanding
+  if (grade >= 6.75) return 'grade-mid'       // 7.0-7.5 = Very Good
+  if (grade >= 5.75) return 'grade-low'       // 6.0-6.5 = Good/Adequate
+  if (grade >= 4.75) return 'grade-vlow'      // 5.0-5.5 = Below Average/Marginal
+  return 'grade-vlow'                         // <5.0 = Poor/Replaceable
+}
+
+function getScoutGradeLabel(grade: number) {
+  if (grade >= 8.5) return 'Elite'
+  if (grade >= 7.5) return 'Outstanding'
+  if (grade >= 6.75) return 'Very Good'
+  if (grade >= 6.25) return 'Good'
+  if (grade >= 5.75) return 'Adequate'
+  if (grade >= 5.25) return 'Marginal'
+  if (grade >= 4.75) return 'Below Avg'
+  if (grade >= 4.25) return 'Poor'
+  return 'Replaceable'
+}
+
+function GradeBadge({ grade, label, type = 'pff' }: { grade: number | null | undefined, label?: string, type?: 'pff' | 'scout' }) {
   // Handle null/undefined/NaN grades
   if (!grade || isNaN(grade)) {
     return (
@@ -42,8 +65,9 @@ function GradeBadge({ grade, label }: { grade: number | null | undefined, label?
     )
   }
   
-  const colorClass = getGradeColor(gradeNum)
-  const gradeLabel = getGradeLabel(gradeNum)
+  // Use different color/label functions based on type
+  const colorClass = type === 'scout' ? getScoutGradeColor(gradeNum) : getPFFGradeColor(gradeNum)
+  const gradeLabel = type === 'scout' ? getScoutGradeLabel(gradeNum) : getPFFGradeLabel(gradeNum)
   
   return (
     <span className={`grade-badge ${colorClass}`}>
@@ -253,11 +277,11 @@ export default function PlayerPage({ params }: { params: Promise<{ slug: string 
           </div>
           <div className="player-meta" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              PFF Grade: <GradeBadge grade={player.pff_grade} label={player.pff_grade ? undefined : 'N/A'} />
+              PFF Grade: <GradeBadge grade={player.pff_grade} label={player.pff_grade ? undefined : 'N/A'} type="pff" />
             </span>
             <span>•</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Scout Grade: <GradeBadge grade={player.scout_grade} />
+              Scout Grade: <GradeBadge grade={player.scout_grade} type="scout" />
             </span>
           </div>
         </div>
