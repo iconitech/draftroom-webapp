@@ -142,7 +142,23 @@ export default function HomePage() {
   const filteredPlayers = (Array.isArray(players) ? players : []).filter(player => {
     const matchesSearch = player.name.toLowerCase().includes(search.toLowerCase()) ||
                          player.school.toLowerCase().includes(search.toLowerCase())
-    const matchesPosition = positionFilter === 'all' || player.position === positionFilter
+    
+    // Position filter with groupings
+    let matchesPosition = positionFilter === 'all'
+    if (!matchesPosition) {
+      if (positionFilter === 'EDGE') {
+        matchesPosition = ['DE', 'ED', 'OLB'].includes(player.position)
+      } else if (positionFilter === 'DL') {
+        matchesPosition = ['DT', 'NT'].includes(player.position)
+      } else if (positionFilter === 'IOL') {
+        matchesPosition = ['G', 'OG', 'C'].includes(player.position)
+      } else if (positionFilter === 'S') {
+        matchesPosition = player.position === 'SAF'
+      } else {
+        matchesPosition = player.position === positionFilter
+      }
+    }
+    
     const matchesSchool = schoolFilter === 'all' || player.school === schoolFilter
     const matchesRound = roundFilter === 'all' || player.projected_round?.toString() === roundFilter
     
