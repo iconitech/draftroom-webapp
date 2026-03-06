@@ -311,6 +311,32 @@ export default {
         return Response.json({ success: true }, { headers: corsHeaders });
       }
 
+      // POST /api/admin/update-ranks - Batch update player ranks (admin only)
+      if (path === '/api/admin/update-ranks' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        const password = authHeader?.replace('Bearer ', '');
+
+        if (!env.ADMIN_PASSWORD || password !== env.ADMIN_PASSWORD) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
+        }
+
+        const body: any = await request.json();
+        const { updates } = body; // Array of { player_id: number, rank: number }
+
+        if (!Array.isArray(updates)) {
+          return Response.json({ error: 'Invalid updates format' }, { status: 400, headers: corsHeaders });
+        }
+
+        // Batch update ranks
+        for (const update of updates) {
+          await env.DB.prepare(
+            'UPDATE players SET rank = ? WHERE id = ?'
+          ).bind(update.rank, update.player_id).run();
+        }
+
+        return Response.json({ success: true, updated: updates.length }, { headers: corsHeaders });
+      }
+
       return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders });
 
     } catch (error: any) {

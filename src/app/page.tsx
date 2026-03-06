@@ -205,6 +205,16 @@ export default function HomePage() {
     
     switch (sortColumn) {
       case 'rank':
+        // Primary sort: Scout Grade (DESC)
+        // Secondary sort: Rank (ASC) as tiebreaker
+        const aScoutGrade = a.scout_grade || 0
+        const bScoutGrade = b.scout_grade || 0
+        
+        if (bScoutGrade !== aScoutGrade) {
+          return sortDirection === 'asc' ? aScoutGrade - bScoutGrade : bScoutGrade - aScoutGrade
+        }
+        
+        // Tiebreaker: use rank
         aVal = a.rank
         bVal = b.rank
         break

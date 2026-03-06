@@ -11,6 +11,7 @@ export default function Header() {
   const navItems = [
     { href: '/', label: 'Big Board' },
     { href: '/grading-scale', label: 'Grading Scale' },
+    { href: '/admin/rankings', label: 'Admin' },
   ]
 
   const isActive = (href: string) => {
