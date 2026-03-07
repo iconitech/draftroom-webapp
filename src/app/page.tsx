@@ -205,16 +205,17 @@ export default function HomePage() {
     
     switch (sortColumn) {
       case 'rank':
-        // Primary sort: Scout Grade (DESC)
-        // Secondary sort: Rank (ASC) as tiebreaker
+        // ALWAYS sort by Scout Grade DESC (highest first), then Position Rank ASC (lowest first) as tiebreaker
+        // This creates the overall big board ranking
         const aScoutGrade = a.scout_grade || 0
         const bScoutGrade = b.scout_grade || 0
         
+        // Primary sort: Scout Grade descending (highest first)
         if (bScoutGrade !== aScoutGrade) {
-          return sortDirection === 'asc' ? aScoutGrade - bScoutGrade : bScoutGrade - aScoutGrade
+          return bScoutGrade - aScoutGrade
         }
         
-        // Tiebreaker: use rank
+        // Tiebreaker: Position rank ascending (lowest position rank wins)
         aVal = a.rank
         bVal = b.rank
         break
@@ -387,9 +388,9 @@ export default function HomePage() {
             </tr>
           </thead>
           <tbody>
-            {paginatedPlayers.map(player => (
+            {paginatedPlayers.map((player, index) => (
               <tr key={player.id}>
-                <td>{player.rank}</td>
+                <td>{startIndex + index + 1}</td>
                 <td>
                   <Link href={`/player/${player.slug}`} className="player-link">
                     {player.name}
@@ -452,10 +453,10 @@ export default function HomePage() {
 
         {/* Mobile Card View */}
         <div className="mobile-cards">
-          {paginatedPlayers.map(player => (
+          {paginatedPlayers.map((player, index) => (
             <Link href={`/player/${player.slug}`} key={player.id} className="player-card">
               <div className="card-header">
-                <div className="card-rank">#{player.rank}</div>
+                <div className="card-rank">#{startIndex + index + 1}</div>
                 <div className="card-position">{player.position}</div>
               </div>
               <h3 className="card-name">{player.name}</h3>
